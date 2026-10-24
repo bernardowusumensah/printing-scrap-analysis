@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Printing Scrap Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of cards on a quiet grid; summary first, detail below */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --line: #dde1e5; --fg: #1d2328; --muted: #5b6670;
+  --accent: #2563a8; --accent-soft: #8fb3db; --grey: #c3c8ce; --warn: #a15c00; --warn-bg: #fff4e0;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14181c; --panel: #1c2127; --line: #2e353d; --fg: #e6e9ec; --muted: #9aa5b0;
+    --accent: #6ea3e0; --accent-soft: #3d5f86; --grey: #4a535d; --warn: #f0b45a; --warn-bg: #2b2213; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--sans); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); display: flex; flex-direction: column; gap: 20px; }
+.banner { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; padding: 8px 12px; border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 6px; font-size: 13px; }
+.banner b { color: var(--warn); font-family: var(--mono); font-weight: 500; letter-spacing: .04em; }
+h1 { font-size: clamp(24px, 4vw, 32px); font-weight: 600; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.lead { margin: 4px 0 0; color: var(--muted); max-width: 68ch; }
+.lead strong { color: var(--fg); font-weight: 500; font-variant-numeric: tabular-nums; }
+.filter { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filter span { font-size: 13px; color: var(--muted); margin-right: 4px; }
+.filter button { font: 500 13px var(--sans); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); cursor: pointer; }
+.filter button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.filter button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr)); gap: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.tile .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.tile .v { font: 500 26px var(--mono); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.tile .s { font-size: 12.5px; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 18px; min-width: 0; position: relative; }
+.card h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.card p.note { font-size: 13px; color: var(--muted); margin: 2px 0 10px; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { font-family: var(--sans); font-size: 12px; fill: var(--muted); }
+.chart text.val { fill: var(--fg); font-family: var(--mono); font-size: 12px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); margin-bottom: 4px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 4px 16px rgba(0,0,0,.12); border-radius: 6px; padding: 6px 9px; font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 5; }
+.tip b { display: block; font-weight: 500; color: var(--muted); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); }
+td.n { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.findings { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 80ch; }
+.findings strong { font-weight: 500; font-variant-numeric: tabular-nums; }
+footer { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .bar { transition: opacity .2s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner"><b>SIMULATED DATA</b><span>A demo on made-up job cards. No real company figures.</span></div>
+
+  <header>
+    <h1>Printing scrap: where it comes from</h1>
+    <p class="lead" id="lead"></p>
+  </header>
+
+  <div class="filter" id="filter" role="group" aria-label="Choose printer"><span>Show</span></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <section class="card" id="findings-card">
+    <h2>What the data shows</h2>
+    <p class="note">Across all four printers, Jul 6 – Oct 3, 2026.</p>
+    <ol class="findings" id="findings"></ol>
+  </section>
+
+  <div class="grid">
+    <section class="card"><h2>Scrap by printer</h2><p class="note">Cups scrapped, split into setup and run scrap.</p>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Setup scrap</span><span><i style="background:var(--grey)"></i>Run scrap</span></div>
+      <div class="chart" id="c-printer"></div></section>
+    <section class="card"><h2>Scrap rate by job size</h2><p class="note">Setup waste is spread over fewer cups on small jobs.</p>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Setup scrap</span><span><i style="background:var(--grey)"></i>Run scrap</span></div>
+      <div class="chart" id="c-size"></div></section>
+    <section class="card"><h2>Weekly run scrap rate</h2><p class="note">Run scrap ÷ cups run while printing, by week.</p>
+      <div class="legend" id="lg-week"></div><div class="chart" id="c-week"></div></section>
+    <section class="card"><h2>Run scrap rate by shift</h2><p class="note">1: 06–14 · 2: 14–22 · 3: 22–06</p>
+      <div class="chart" id="c-shift"></div></section>
+    <section class="card"><h2>Setup scrap: new vs repeat artwork</h2><p class="note">Average cups wasted per setup.</p>
+      <div class="chart" id="c-art"></div></section>
+    <section class="card"><h2>Data checks</h2><p class="note">Problems found on the job cards while cleaning.</p>
+      <table><thead><tr><th>Check</th><th style="text-align:right">Rows</th></tr></thead><tbody id="checks"></tbody></table></section>
+  </div>
+
+  <footer>Scrap rate = (setup scrap + run scrap) ÷ (good cups + setup scrap + run scrap). Cost uses an assumed <span id="cpc"></span> per blank cup. Built by <code>03_analysis/demo_analysis.py</code> from the files in <code>01_raw/job_cards</code>.</footer>
+</div>
+
+<script>
+const D = {"printers": ["All", "Printer P1", "Printer P2", "Printer P3", "Printer P4"], "summary": {"All": {"jobs": 1765, "printed": 60125843, "setup": 700030, "run": 685536, "scrap_rate": 0.022525349728210582, "setup_share": 0.5052303535161804, "avg_setup": 396.61756373937675, "cost": 83133.95999999999}, "Printer P1": {"jobs": 464, "printed": 15252672, "setup": 144496, "run": 151799, "scrap_rate": 0.019055606716510493, "setup_share": 0.4876761335830844, "avg_setup": 311.41379310344826, "cost": 17777.7}, "Printer P2": {"jobs": 444, "printed": 15548478, "setup": 140058, "run": 155422, "scrap_rate": 0.018649380413656737, "setup_share": 0.4740016244754298, "avg_setup": 315.44594594594594, "cost": 17728.8}, "Printer P3": {"jobs": 420, "printed": 13807060, "setup": 278065, "run": 140095, "scrap_rate": 0.029395678942047997, "setup_share": 0.6649727377080543, "avg_setup": 662.0595238095239, "cost": 25089.6}, "Printer P4": {"jobs": 437, "printed": 15517633, "setup": 137411, "run": 238220, "scrap_rate": 0.023634603942903107, "setup_share": 0.3658137906615801, "avg_setup": 314.441647597254, "cost": 22537.86}}, "size": {"All": [{"pallets": 1, "setup_rate": 0.02729496566057243, "run_rate": 0.010898812098450242}, {"pallets": 2, "setup_rate": 0.014609124293989268, "run_rate": 0.010934828621151924}, {"pallets": 3, "setup_rate": 0.009066670749347763, "run_rate": 0.01091897465732413}, {"pallets": 4, "setup_rate": 0.00694578118238725, "run_rate": 0.01177155351414629}, {"pallets": 6, "setup_rate": 0.004719860813756894, "run_rate": 0.011104005555206062}], "Printer P1": [{"pallets": 1, "setup_rate": 0.020754087827047237, "run_rate": 0.009553483867402384}, {"pallets": 2, "setup_rate": 0.01208756563178296, "run_rate": 0.009326310282644685}, {"pallets": 3, "setup_rate": 0.007297805372483433, "run_rate": 0.009529910204752403}, {"pallets": 4, "setup_rate": 0.005635855749127587, "run_rate": 0.010339522211545757}, {"pallets": 6, "setup_rate": 0.004077426086241549, "run_rate": 0.010144480164500485}], "Printer P2": [{"pallets": 1, "setup_rate": 0.0213527813241155, "run_rate": 0.009503697866225319}, {"pallets": 2, "setup_rate": 0.010956999020590408, "run_rate": 0.009747445021274103}, {"pallets": 3, "setup_rate": 0.007616142230011847, "run_rate": 0.009966784886560671}, {"pallets": 4, "setup_rate": 0.005932617788891154, "run_rate": 0.009808643660859397}, {"pallets": 6, "setup_rate": 0.004118178477963492, "run_rate": 0.009849371689396981}], "Printer P3": [{"pallets": 1, "setup_rate": 0.04524196527897227, "run_rate": 0.009459887208058487}, {"pallets": 2, "setup_rate": 0.02362501337124882, "run_rate": 0.009751159140125058}, {"pallets": 3, "setup_rate": 0.015057487662344524, "run_rate": 0.009765439241670101}, {"pallets": 4, "setup_rate": 0.012483463935005972, "run_rate": 0.010100841716964485}, {"pallets": 6, "setup_rate": 0.007057937693209128, "run_rate": 0.010118623408024522}], "Printer P4": [{"pallets": 1, "setup_rate": 0.02103239937281277, "run_rate": 0.015100836567687136}, {"pallets": 2, "setup_rate": 0.01115353160348347, "run_rate": 0.015051320562988581}, {"pallets": 3, "setup_rate": 0.0073578835599392755, "run_rate": 0.015075959079863263}, {"pallets": 4, "setup_rate": 0.005552372084695763, "run_rate": 0.015546268834866761}, {"pallets": 6, "setup_rate": 0.0036674925301879184, "run_rate": 0.013969001308760463}]}, "shift": {"All": [{"shift": 1, "run_rate": 0.010159951234277936}, {"shift": 2, "run_rate": 0.010245013218178051}, {"shift": 3, "run_rate": 0.013427088442500132}], "Printer P1": [{"shift": 1, "run_rate": 0.008848320993633158}, {"shift": 2, "run_rate": 0.009027645075151169}, {"shift": 3, "run_rate": 0.01163879281464972}], "Printer P2": [{"shift": 1, "run_rate": 0.008835455050690107}, {"shift": 2, "run_rate": 0.009106452332720984}, {"shift": 3, "run_rate": 0.011804575363949405}], "Printer P3": [{"shift": 1, "run_rate": 0.009443489373553025}, {"shift": 2, "run_rate": 0.008756918984744167}, {"shift": 3, "run_rate": 0.011915713810225199}], "Printer P4": [{"shift": 1, "run_rate": 0.013375728949521071}, {"shift": 2, "run_rate": 0.013837607941354182}, {"shift": 3, "run_rate": 0.01823864025023475}]}, "artwork": {"All": {"Repeat": 368.9924953095685, "New": 662.7168674698795}, "Printer P1": {"Repeat": 293.4117647058824, "New": 507.5897435897436}, "Printer P2": {"Repeat": 292.9179104477612, "New": 531.0714285714286}, "Printer P3": {"Repeat": 615.8184210526316, "New": 1101.35}, "Printer P4": {"Repeat": 289.6811224489796, "New": 530.1333333333333}}, "weekly": {"Printer P1": [{"week": "2026-07-06", "run_rate": 0.00975667139272482}, {"week": "2026-07-13", "run_rate": 0.009582066243735235}, {"week": "2026-07-20", "run_rate": 0.010014205556155476}, {"week": "2026-07-27", "run_rate": 0.00920588984660055}, {"week": "2026-08-03", "run_rate": 0.009507994441657586}, {"week": "2026-08-10", "run_rate": 0.009901155106986139}, {"week": "2026-08-17", "run_rate": 0.009771099056592085}, {"week": "2026-08-24", "run_rate": 0.010062366616248472}, {"week": "2026-08-31", "run_rate": 0.010140222096743836}, {"week": "2026-09-07", "run_rate": 0.010554811942379783}, {"week": "2026-09-14", "run_rate": 0.00958224803430153}, {"week": "2026-09-21", "run_rate": 0.010101633860800206}, {"week": "2026-09-28", "run_rate": 0.010008919975486799}], "Printer P2": [{"week": "2026-07-06", "run_rate": 0.009853896323102474}, {"week": "2026-07-13", "run_rate": 0.009836593593773566}, {"week": "2026-07-20", "run_rate": 0.00945652636506788}, {"week": "2026-07-27", "run_rate": 0.0101654351225096}, {"week": "2026-08-03", "run_rate": 0.010463554111018259}, {"week": "2026-08-10", "run_rate": 0.009869413549695038}, {"week": "2026-08-17", "run_rate": 0.009919165825870862}, {"week": "2026-08-24", "run_rate": 0.01016585933898867}, {"week": "2026-08-31", "run_rate": 0.009515187671307171}, {"week": "2026-09-07", "run_rate": 0.009427037019117674}, {"week": "2026-09-14", "run_rate": 0.009846568594821274}, {"week": "2026-09-21", "run_rate": 0.009994038584311752}, {"week": "2026-09-28", "run_rate": 0.01024653831520659}], "Printer P3": [{"week": "2026-07-06", "run_rate": 0.009495965663972202}, {"week": "2026-07-13", "run_rate": 0.009870663177293267}, {"week": "2026-07-20", "run_rate": 0.01011277364192526}, {"week": "2026-07-27", "run_rate": 0.00989887722191236}, {"week": "2026-08-03", "run_rate": 0.009983156948407968}, {"week": "2026-08-10", "run_rate": 0.010966719492868463}, {"week": "2026-08-17", "run_rate": 0.009547639129233499}, {"week": "2026-08-24", "run_rate": 0.010121439723359667}, {"week": "2026-08-31", "run_rate": 0.009933087740666497}, {"week": "2026-09-07", "run_rate": 0.011008117545689538}, {"week": "2026-09-14", "run_rate": 0.009964635587717291}, {"week": "2026-09-21", "run_rate": 0.01000883241421796}, {"week": "2026-09-28", "run_rate": 0.009637856546759594}], "Printer P4": [{"week": "2026-07-06", "run_rate": 0.009189825311649026}, {"week": "2026-07-13", "run_rate": 0.010175603835723813}, {"week": "2026-07-20", "run_rate": 0.009203915184803185}, {"week": "2026-07-27", "run_rate": 0.009595649391161736}, {"week": "2026-08-03", "run_rate": 0.010387425141696075}, {"week": "2026-08-10", "run_rate": 0.009462917768286895}, {"week": "2026-08-17", "run_rate": 0.01817762592851008}, {"week": "2026-08-24", "run_rate": 0.02674824236569527}, {"week": "2026-08-31", "run_rate": 0.029805465493283927}, {"week": "2026-09-07", "run_rate": 0.03442563030210299}, {"week": "2026-09-14", "run_rate": 0.009708276457495597}, {"week": "2026-09-21", "run_rate": 0.009445241989339112}, {"week": "2026-09-28", "run_rate": 0.010063435569242444}]}, "checks": [["Duplicate shift lines removed", 6], ["Blank run scrap filled from counters", 36], ["Shift lines where counters don't match", 24], ["Blank setup scrap filled from counters", 37]], "cost_per_cup": 0.06};
+const NS = 'http://www.w3.org/2000/svg';
+const pct = (v, d = 1) => (v * 100).toFixed(d) + '%';
+const int = (v) => Math.round(v).toLocaleString('en-US');
+const compact = (v) => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: v >= 1e6 ? 2 : 0 }).format(v);
+function niceTicks(max) { const raw = max / 4, mag = 10 ** Math.floor(Math.log10(raw)); const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((x) => x >= raw); const out = []; for (let t = 0; t <= max + 1e-12; t += step) out.push(+t.toFixed(10)); return out; }
+const wk = (s) => new Date(s + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+let sel = 'All';
+try { const h = decodeURIComponent(location.hash.slice(1)); if (D.printers.includes(h)) sel = h; } catch (e) {}
+
+function el(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function txt(parent, x, y, s, attrs = {}) { const t = el('text', { x, y, ...attrs }, parent); t.textContent = s; return t; }
+function svg(box, h) { box.replaceChildren(); const w = Math.max(280, box.clientWidth); const s = el('svg', { viewBox: `0 0 ${w} ${h}`, role: 'img' }, box); return [s, w]; }
+function measure(s, labels) { const t = el('text', { x: -999, y: -999 }, s); let m = 0; for (const l of labels) { t.textContent = l; m = Math.max(m, t.getComputedTextLength()); } t.remove(); return m; }
+function tip(box) { let t = box.parentNode.querySelector('.tip'); if (!t) { t = document.createElement('div'); t.className = 'tip'; t.hidden = true; box.parentNode.appendChild(t); } return t; }
+function hover(target, box, head, lines) {
+  const t = tip(box);
+  target.addEventListener('mousemove', (ev) => {
+    const r = box.parentNode.getBoundingClientRect();
+    t.replaceChildren(); const b = document.createElement('b'); b.textContent = head; t.appendChild(b);
+    for (const l of lines) { const d = document.createElement('div'); d.textContent = l; t.appendChild(d); }
+    t.hidden = false;
+    const x = ev.clientX - r.left + 12, y = ev.clientY - r.top - t.offsetHeight - 8;
+    t.style.left = Math.min(x, r.width - t.offsetWidth - 8) + 'px'; t.style.top = Math.max(4, y) + 'px';
+  });
+  target.addEventListener('mouseleave', () => { t.hidden = true; });
+}
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function hbars(box, rows, h) {
+  const [s, w] = svg(box, rows.length * 44 + 8);
+  const left = measure(s, rows.map((r) => r.label)) + 12, right = measure(s, rows.map((r) => r.total)) + 10;
+  const max = Math.max(...rows.map((r) => r.a + r.b));
+  const x = (v) => left + (v / max) * (w - left - right);
+  rows.forEach((r, i) => {
+    const y = 6 + i * 44, g = el('g', { class: 'bar', opacity: r.dim ? 0.35 : 1 }, s);
+    txt(g, left - 10, y + 17, r.label, { 'text-anchor': 'end' });
+    el('rect', { x: x(0), y, width: x(r.a) - x(0), height: 26, rx: 3, fill: css('--accent') }, g);
+    if (r.b) el('rect', { x: x(r.a), y, width: x(r.a + r.b) - x(r.a), height: 26, rx: 3, fill: css('--grey') }, g);
+    txt(g, x(r.a + r.b) + 6, y + 17, r.total, { class: 'val' });
+    const hit = el('rect', { x: 0, y: y - 6, width: w, height: 38, fill: 'transparent' }, g);
+    hover(hit, box, r.label, r.tip);
+  });
+}
+function vbars(box, rows, fmtAxis) {
+  const H = 230, [s, w] = svg(box, H), base = H - 28, y0 = 18;
+  const max = Math.max(...rows.map((r) => r.a + (r.b || 0))) * 1.15;
+  const ticks = niceTicks(max);
+  const left = measure(s, ticks.map(fmtAxis)) + 10;
+  const y = (v) => base - (v / max) * (base - y0), band = (w - left) / rows.length, bw = Math.min(56, band * 0.55);
+  ticks.forEach((t) => { el('line', { x1: left, x2: w, y1: y(t), y2: y(t), stroke: css('--line') }, s); txt(s, left - 8, y(t) + 4, fmtAxis(t), { 'text-anchor': 'end' }); });
+  rows.forEach((r, i) => {
+    const cx = left + band * i + band / 2, g = el('g', {}, s);
+    el('rect', { x: cx - bw / 2, y: y(r.a), width: bw, height: base - y(r.a), rx: 3, fill: r.colorA || css('--accent') }, g);
+    if (r.b) el('rect', { x: cx - bw / 2, y: y(r.a + r.b), width: bw, height: y(r.a) - y(r.a + r.b), rx: 3, fill: css('--grey') }, g);
+    txt(g, cx, y(r.a + (r.b || 0)) - 7, r.total, { class: 'val', 'text-anchor': 'middle' });
+    txt(g, cx, H - 8, r.label, { 'text-anchor': 'middle' });
+    hover(el('rect', { x: cx - band / 2, y: 0, width: band, height: H, fill: 'transparent' }, g), box, r.label, r.tip);
+  });
+}
+function lines(box) {
+  const ps = D.printers.slice(1), H = 240, [s, w] = svg(box, H), base = H - 26, y0 = 12;
+  const all = ps.flatMap((p) => D.weekly[p]), max = Math.max(...all.map((r) => r.run_rate)) * 1.1;
+  const peakP = ps.reduce((a, p) => (Math.max(...D.weekly[p].map((r) => r.run_rate)) > Math.max(...D.weekly[a].map((r) => r.run_rate)) ? p : a));
+  const focus = sel === 'All' ? peakP : sel;
+  const weeks = D.weekly[ps[0]].map((r) => r.week);
+  const ticks = niceTicks(max);
+  const left = measure(s, ticks.map((t) => pct(t, 1))) + 10;
+  const x = (i) => left + (i / (weeks.length - 1)) * (w - left - 8), y = (v) => base - (v / max) * (base - y0);
+  ticks.forEach((t) => { el('line', { x1: left, x2: w - 8, y1: y(t), y2: y(t), stroke: css('--line') }, s); txt(s, left - 8, y(t) + 4, pct(t, t * 100 % 1 ? 1 : 0), { 'text-anchor': 'end' }); });
+  const step = w < 480 ? 4 : 2;
+  weeks.forEach((wv, i) => { if (i % step === 0) txt(s, x(i), H - 6, wk(wv), { 'text-anchor': 'middle' }); });
+  const color = (p) => (p === focus ? css('--accent') : css('--grey'));
+  const lg = document.getElementById('lg-week'); lg.replaceChildren();
+  ps.forEach((p, i) => { const sp = document.createElement('span'); const k = document.createElement('i'); k.style.background = color(p); sp.append(k, p); lg.appendChild(sp); });
+  [...ps.keys()].sort((a, b) => (ps[a] === focus) - (ps[b] === focus)).forEach((i) => {
+    const p = ps[i], d = D.weekly[p].map((r, k) => `${k ? 'L' : 'M'}${x(k)},${y(r.run_rate)}`).join(' ');
+    el('path', { d, fill: 'none', stroke: color(p), 'stroke-width': p === focus ? 2.6 : 1.8, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, s);
+  });
+  const rule = el('line', { y1: y0, y2: base, stroke: css('--muted'), 'stroke-dasharray': '3 3', opacity: 0 }, s);
+  const hit = el('rect', { x: left, y: 0, width: w - left, height: H, fill: 'transparent' }, s);
+  const t = tip(box);
+  hit.addEventListener('mousemove', (ev) => {
+    const r = s.getBoundingClientRect(), mx = (ev.clientX - r.left) * (w / r.width);
+    const i = Math.max(0, Math.min(weeks.length - 1, Math.round(((mx - left) / (w - left - 8)) * (weeks.length - 1))));
+    rule.setAttribute('x1', x(i)); rule.setAttribute('x2', x(i)); rule.setAttribute('opacity', 1);
+    t.replaceChildren(); const b = document.createElement('b'); b.textContent = 'Week of ' + wk(weeks[i]); t.appendChild(b);
+    ps.forEach((p) => { const d = document.createElement('div'); d.textContent = `${p}: ${pct(D.weekly[p][i].run_rate, 2)}`; t.appendChild(d); });
+    t.hidden = false; const pr = box.parentNode.getBoundingClientRect();
+    t.style.left = Math.min(ev.clientX - pr.left + 12, pr.width - t.offsetWidth - 8) + 'px'; t.style.top = Math.max(4, ev.clientY - pr.top - t.offsetHeight - 8) + 'px';
+  });
+  hit.addEventListener('mouseleave', () => { t.hidden = true; rule.setAttribute('opacity', 0); });
+}
+
+function findings() {
+  const ps = D.printers.slice(1), S = D.summary;
+  const worst = ps.reduce((a, b) => (S[b].avg_setup > S[a].avg_setup ? b : a));
+  const others = ps.filter((p) => p !== worst), oAvg = others.reduce((t, p) => t + S[p].setup, 0) / others.reduce((t, p) => t + S[p].jobs, 0);
+  let peak = { r: 0 };
+  ps.forEach((p) => D.weekly[p].forEach((r) => { if (r.run_rate > peak.r) peak = { p, r: r.run_rate, w: r.week }; }));
+  const own = D.weekly[peak.p].map((r) => r.run_rate).sort((a, b) => a - b), normal = own[Math.floor(own.length / 2)];
+  const sz = D.size.All, rate = (r) => r.setup_rate + r.run_rate;
+  const sh = D.shift.All, night = sh.find((r) => r.shift === 3).run_rate, other = (sh[0].run_rate + sh[1].run_rate) / 2;
+  const art = D.artwork.All;
+  const items = [
+    [`${worst} wastes `, int(S[worst].avg_setup), ` cups per setup; the other printers average about `, int(oAvg), '.'],
+    [`${sz[0].pallets}-pallet jobs scrap `, pct(rate(sz[0])), ` of cups against `, pct(rate(sz.at(-1))), ` on ${sz.at(-1).pallets}-pallet jobs, because setup waste is the same whatever the job size.`],
+    [`${peak.p}'s run scrap climbed to `, pct(peak.r), ` in the week of ${wk(peak.w)}, against a normal `, pct(normal), ', then recovered.'],
+    ['Night shift run scrap is ', pct(night, 2), ' against about ', pct(other, 2), ' on the other shifts.'],
+    ['New artwork versions waste ', int(art.New), ' cups per setup, against ', int(art.Repeat), ' for repeat artwork.'],
+  ];
+  const ol = document.getElementById('findings'); ol.replaceChildren();
+  items.forEach((parts) => { const li = document.createElement('li'); parts.forEach((p, i) => { if (i % 2) { const st = document.createElement('strong'); st.textContent = p; li.appendChild(st); } else li.appendChild(document.createTextNode(p)); }); ol.appendChild(li); });
+}
+
+function draw() {
+  const S = D.summary[sel];
+  document.querySelectorAll('#filter button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.p === sel)));
+  const lead = document.getElementById('lead'); lead.replaceChildren();
+  [`${sel === 'All' ? 'The plant' : sel} scrapped `, pct(S.scrap_rate, 2), ' of the cups it ran, and ', pct(S.setup_share, 0), ' of that waste happened during setup, before the first good cup.']
+    .forEach((p, i) => { if (i % 2) { const st = document.createElement('strong'); st.textContent = p; lead.appendChild(st); } else lead.appendChild(document.createTextNode(p)); });
+  const tiles = [['Scrap rate', pct(S.scrap_rate, 2), 'scrap ÷ all cups run'], ['Cups scrapped', compact(S.setup + S.run), 'setup + run scrap'],
+    ['Estimated cost', '$' + compact(S.cost), `at an assumed $${D.cost_per_cup.toFixed(2)} per cup`], ['From setup', pct(S.setup_share, 0), 'share of all scrap'],
+    ['Job cards', int(S.jobs), compact(S.printed) + ' good cups printed']];
+  const tb = document.getElementById('tiles'); tb.replaceChildren();
+  tiles.forEach(([k, v, s]) => { const d = document.createElement('div'); d.className = 'tile'; d.innerHTML = '<div class="k"></div><div class="v"></div><div class="s"></div>'; d.children[0].textContent = k; d.children[1].textContent = v; d.children[2].textContent = s; tb.appendChild(d); });
+
+  hbars(document.getElementById('c-printer'), D.printers.slice(1).map((p) => ({ label: p, a: D.summary[p].setup, b: D.summary[p].run, total: compact(D.summary[p].setup + D.summary[p].run), dim: sel !== 'All' && sel !== p,
+    tip: [`Setup: ${int(D.summary[p].setup)}`, `Run: ${int(D.summary[p].run)}`, `Per setup: ${int(D.summary[p].avg_setup)} cups`] })));
+  vbars(document.getElementById('c-size'), D.size[sel].map((r) => ({ label: `${r.pallets} pallet${r.pallets > 1 ? 's' : ''}`, a: r.setup_rate, b: r.run_rate, total: pct(r.setup_rate + r.run_rate),
+    tip: [`Setup: ${pct(r.setup_rate, 2)}`, `Run: ${pct(r.run_rate, 2)}`] })), (v) => pct(v, 1));
+  lines(document.getElementById('c-week'));
+  vbars(document.getElementById('c-shift'), D.shift[sel].map((r) => ({ label: 'Shift ' + r.shift, a: r.run_rate, total: pct(r.run_rate, 2), colorA: r.shift === 3 ? css('--accent') : css('--accent-soft'), tip: [`Run scrap rate: ${pct(r.run_rate, 2)}`] })), (v) => pct(v, 1));
+  const A = D.artwork[sel];
+  hbars(document.getElementById('c-art'), ['Repeat', 'New'].filter((k) => A[k] != null).map((k) => ({ label: k + ' artwork', a: A[k], b: 0, total: int(A[k]) + ' cups', tip: [`${int(A[k])} cups per setup`] })));
+}
+
+(function init() {
+  const f = document.getElementById('filter');
+  D.printers.forEach((p) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.p = p; b.textContent = p === 'All' ? 'All printers' : p.replace('Printer ', ''); b.addEventListener('click', () => { sel = p; try { history.replaceState(null, '', p === 'All' ? location.pathname : '#' + encodeURIComponent(p)); } catch (e) {} draw(); }); f.appendChild(b); });
+  const tb = document.getElementById('checks');
+  D.checks.forEach(([c, n]) => { const tr = document.createElement('tr'); const a = document.createElement('td'); a.textContent = c; const b = document.createElement('td'); b.className = 'n'; b.textContent = int(n); tr.append(a, b); tb.appendChild(tr); });
+  document.getElementById('cpc').textContent = '$' + D.cost_per_cup.toFixed(2);
+  findings(); draw();
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(draw, 150); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+})();
+</script>
+</body>
+</html>

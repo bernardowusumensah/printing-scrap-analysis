@@ -4,6 +4,18 @@ Learning data analytics by analyzing production scrap at a plant that makes and 
 
 > **All data in this repository is simulated.** It was generated to practice on and contains no real company information.
 
+## Demo
+
+**[Open the interactive dashboard](https://bernardowusumensah.github.io/printing-scrap-analysis/)**: filter by printer and hover the charts for details.
+
+![Scrap by printer](04_output/charts/scrap_by_printer.png)
+
+![Scrap rate by job size](04_output/charts/scrap_by_job_size.png)
+
+![Weekly run scrap rate](04_output/charts/weekly_run_scrap.png)
+
+The demo charts and dashboard show where the project is heading. The step-by-step work is in the notebooks in `03_analysis/`. To rebuild the demo: `python 03_analysis/demo_analysis.py` (needs pandas and matplotlib).
+
 ## The business problem
 
 The plant has two departments. Molding makes blank cups, which go to the warehouse. Printing takes the blanks from the warehouse, prints customer artwork on them, and returns the finished cups to the warehouse.
@@ -29,6 +41,7 @@ The question this project works toward: **where does scrap come from, what does 
 | `02_clean/` | Cleaned data produced by the notebooks |
 | `03_analysis/` | Jupyter notebooks, numbered in the order they run |
 | `04_output/` | Charts and reports |
+| `docs/` | The dashboard page published with GitHub Pages |
 
 ## Key measures
 
