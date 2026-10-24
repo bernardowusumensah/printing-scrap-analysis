@@ -1,0 +1,13 @@
+# Real company data - never upload
+real_data/
+
+# Jupyter and Python clutter
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# Excel temporary files and system files
+~$*
+Thumbs.db
+desktop.ini
+.DS_Store
